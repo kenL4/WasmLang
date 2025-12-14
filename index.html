@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toy WASM Language</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #screen {
+            background-color: #000;
+            border: 2px solid #333;
+            padding: 10px;
+            font-size: 16px;
+            line-height: 16px;
+            white-space: pre;
+            width: 80ch; /* 80 characters wide */
+            height: 25em; /* 25 lines high */
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #status {
+            margin-top: 10px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div id="screen"></div>
+    <div id="status">Loading...</div>
+    <script src="runtime.js"></script>
+</body>
+</html>
