@@ -14,7 +14,14 @@ try {
             env: {
                 memory: memory,
                 present: () => { console.log("present called"); },
-                random: () => { return 42; }
+                random: () => { return 42; },
+                get_key: () => { return 0; },
+                fight: (target) => { console.log(`fight called with target hash ${target}`); },
+                open: (target) => { console.log(`open called with target hash ${target}`); },
+                drink: (target) => { console.log(`drink called with target hash ${target}`); },
+                equip: (target) => { console.log(`equip called with target hash ${target}`); },
+                pray: (target) => { console.log(`pray called with target hash ${target}`); },
+                cast: (target) => { console.log(`cast called with target hash ${target}`); }
             }
         };
 

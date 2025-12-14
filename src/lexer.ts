@@ -27,6 +27,33 @@ export enum TokenType {
     NotEquals,
     DoubleEquals,
     EOF,
+    // New Tokens
+    Wall,
+    Path,
+    Dot,
+    Player,
+    Exit,
+    Query,
+    Bang,
+    Dungeon,
+    Wander,
+    // Types
+    TypeGold,
+    TypeHp,
+    TypeMana,
+    TypeItem,
+    // Verbs
+    VerbFight,
+    VerbOpen,
+    VerbDrink,
+    VerbEquip,
+    VerbPray,
+    VerbCast,
+    // Literals
+    True,
+    False,
+    PlusEquals,
+    MinusEquals
 }
 
 export interface Token {
@@ -89,6 +116,20 @@ export class Lexer {
                     case 'for': type = TokenType.For; break;
                     case 'func': type = TokenType.Func; break;
                     case 'return': type = TokenType.Return; break;
+                    case 'dungeon': type = TokenType.Dungeon; break;
+                    case 'wander': type = TokenType.Wander; break;
+                    case 'gold': type = TokenType.TypeGold; break;
+                    case 'hp': type = TokenType.TypeHp; break;
+                    case 'mana': type = TokenType.TypeMana; break;
+                    case 'item': type = TokenType.TypeItem; break;
+                    case 'fight': type = TokenType.VerbFight; break;
+                    case 'open': type = TokenType.VerbOpen; break;
+                    case 'drink': type = TokenType.VerbDrink; break;
+                    case 'equip': type = TokenType.VerbEquip; break;
+                    case 'pray': type = TokenType.VerbPray; break;
+                    case 'cast': type = TokenType.VerbCast; break;
+                    case 'true': type = TokenType.True; break;
+                    case 'false': type = TokenType.False; break;
                 }
                 tokens.push({ type, value: id, line: this.line });
                 continue;
@@ -108,8 +149,52 @@ export class Lexer {
                         tokens.push({ type: TokenType.Equals, value: '=', line: this.line });
                     }
                     break;
-                case '+': tokens.push({ type: TokenType.Plus, value: '+', line: this.line }); break;
-                case '-': tokens.push({ type: TokenType.Minus, value: '-', line: this.line }); break;
+                case '+':
+                    if (this.input[this.pos + 1] === '=') {
+                        this.advance();
+                        tokens.push({ type: TokenType.PlusEquals, value: '+=', line: this.line });
+                    } else {
+                        // Heuristic: + is Plus if previous token is an expression ender
+                        const lastType = tokens.length > 0 ? tokens[tokens.length - 1].type : TokenType.EOF;
+                        if (lastType === TokenType.Number ||
+                            lastType === TokenType.Identifier ||
+                            lastType === TokenType.RParen ||
+                            lastType === TokenType.RBracket ||
+                            lastType === TokenType.True ||
+                            lastType === TokenType.False) {
+                            tokens.push({ type: TokenType.Plus, value: '+', line: this.line });
+                        } else {
+                            tokens.push({ type: TokenType.Wall, value: '+', line: this.line });
+                        }
+                    }
+                    break;
+                case '-':
+                    if (this.input[this.pos + 1] === '=') {
+                        this.advance();
+                        tokens.push({ type: TokenType.MinusEquals, value: '-=', line: this.line });
+                    } else {
+                        const next = this.input[this.pos + 1];
+                        if (next === '-' || next === '+' || next === '|' || next === '\n' || next === undefined || next === '') {
+                            tokens.push({ type: TokenType.Wall, value: '-', line: this.line });
+                        } else {
+                            tokens.push({ type: TokenType.Minus, value: '-', line: this.line });
+                        }
+                    }
+                    break;
+                case '|': tokens.push({ type: TokenType.Wall, value: '|', line: this.line }); break;
+                case '#': tokens.push({ type: TokenType.Path, value: '#', line: this.line }); break;
+                case '.': tokens.push({ type: TokenType.Dot, value: '.', line: this.line }); break;
+                case '@': tokens.push({ type: TokenType.Player, value: '@', line: this.line }); break;
+                case '>': tokens.push({ type: TokenType.Exit, value: '>', line: this.line }); break;
+                case '?': tokens.push({ type: TokenType.Query, value: '?', line: this.line }); break;
+                case '!':
+                    if (this.input[this.pos + 1] === '=') {
+                        this.advance();
+                        tokens.push({ type: TokenType.NotEquals, value: '!=', line: this.line });
+                    } else {
+                        tokens.push({ type: TokenType.Bang, value: '!', line: this.line });
+                    }
+                    break;
                 case '*': tokens.push({ type: TokenType.Multiply, value: '*', line: this.line }); break;
                 case '/':
                     if (this.input[this.pos + 1] === '/') {
@@ -121,19 +206,10 @@ export class Lexer {
                         tokens.push({ type: TokenType.Divide, value: '/', line: this.line });
                     }
                     break;
-                case '>': tokens.push({ type: TokenType.Gt, value: '>', line: this.line }); break;
                 case '<': tokens.push({ type: TokenType.Lt, value: '<', line: this.line }); break;
                 case ',': tokens.push({ type: TokenType.Comma, value: ',', line: this.line }); break;
                 case '[': tokens.push({ type: TokenType.LBracket, value: '[', line: this.line }); break;
                 case ']': tokens.push({ type: TokenType.RBracket, value: ']', line: this.line }); break;
-                case '!':
-                    if (this.input[this.pos + 1] === '=') {
-                        this.advance();
-                        tokens.push({ type: TokenType.NotEquals, value: '!=', line: this.line });
-                    } else {
-                        throw new Error(`Unexpected character: ! at line ${this.line}`);
-                    }
-                    break;
                 default:
                     throw new Error(`Unexpected character: ${char} at line ${this.line}`);
             }

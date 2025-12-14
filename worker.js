@@ -27,25 +27,23 @@ self.onmessage = async (e) => {
                     memory: memory,
                     present: present,
                     random: random,
-                    get_key: get_key
+                    get_key: get_key,
+                    fight: (t) => console.log("fight", t),
+                    open: (t) => console.log("open", t),
+                    drink: (t) => console.log("drink", t),
+                    equip: (t) => console.log("equip", t),
+                    pray: (t) => console.log("pray", t),
+                    cast: (t) => console.log("cast", t)
                 }
             };
 
-            console.log("Worker initializing... v3");
+            console.log("Worker initializing... v4");
 
             const results = await WebAssembly.instantiate(e.data.wasm, importObject);
             self.postMessage({ type: 'ready' });
 
-            // Run initialization
+            // Run main function
             results.instance.exports.run();
-
-            // Check for update function
-            if (results.instance.exports.update) {
-                console.log("Starting update loop");
-                setInterval(() => {
-                    results.instance.exports.update();
-                }, 16); // ~60 FPS
-            }
 
         } catch (err) {
             self.postMessage({ type: 'error', message: err.message });
