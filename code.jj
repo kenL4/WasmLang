@@ -1,32 +1,49 @@
 +---------------------+
-| @ dungeon main      |
+| @ dungeon init      |
 |                     |
 |  gold x = 40        |
 |  gold y = 12        |
 |  gold dx = 1        |
 |  gold dy = 1        |
 |                     |
-|  wander(true) {     |
-|    scribe(x, y, 32) |
-|    x += dx          |
-|    y += dy          |
-|                     |
-|    ? (78 < x) {     |
-|      dx = 0 - 1     |
-|    }                |
-|    ? (x < 1) {      |
-|      dx = 1         |
-|    }                |
-|    ? (23 < y) {     |
-|      dy = 0 - 1     |
-|    }                |
-|    ? (y < 1) {      |
-|      dy = 1         |
-|    }                |
-|                     |
-|    scribe(x, y, 79) |
-|    reveal()         |
-|  }                  |
-|                     |
+|  mem_set(20000, x)  |
+|  mem_set(20004, y)  |
+|  mem_set(20008, dx) |
+|  mem_set(20012, dy) |
 |  > 0                |
 +---------------------+
+
++---------------------------+
+| @ dungeon main            |
+|                           |
+|  gold x = mem_get(20000)  |
+|  gold y = mem_get(20004)  |
+|  gold dx = mem_get(20008) |
+|  gold dy = mem_get(20012) |
+|                           |
+|  scribe(x, y, 32)         |
+|  x += dx                  |
+|  y += dy                  |
+|                           |
+|  ? (78 < x) {             |
+|    dx = -1                |
+|  }                        |
+|  ? (x < 1) {              |
+|    dx = 1                 |
+|  }                        |
+|  ? (23 < y) {             |
+|    dy = -1                |
+|  }                        |
+|  ? (y < 1) {              |
+|    dy = 1                 |
+|  }                        |
+|                           |
+|  scribe(x, y, 79)         |
+|  reveal()                 |
+|                           |
+|  mem_set(20000, x)        |
+|  mem_set(20004, y)        |
+|  mem_set(20008, dx)       |
+|  mem_set(20012, dy)       |
+|  > 0                      |
++---------------------------+

@@ -48,7 +48,7 @@ Then open `http://localhost:8080` in your browser.
 ### Rooms
 A program consists of multiple rooms.
 - `init`: Called once at startup.
-- `main` (or `frame`): Called repeatedly by the host (game loop).
+- `main` : Called repeatedly at a target of ~60 calls per second.
 
 Rooms are surrounded by ASCII walls (`+`, `-`, `|`).
 
@@ -118,15 +118,43 @@ The language provides direct access to WebAssembly memory.
 - `mem_get(addr)`: Read i32 from address.
 - `mem_set(addr, val)`: Write i32 to address.
 - `scan(x, y)`: Read byte from screen buffer at (x, y).
-- `scribe(x, y, char)`: Write byte to screen buffer at (x, y).
+- `scribe(x, y, char)`: Write byte to screen buffer at (x, y). Takes ASCII code for `char` (reference table below).
 - `reveal()`: Render the screen buffer to the browser.
-- `get_key()`: Get the last key press code.
+- `get_key()`: Get the last key press code (reference table also provided below).
 - `random()`: Get a random integer.
 
 ### Operators
 - Arithmetic: `+`, `-`, `*`, `/`
 - Comparison: `==`, `!=`, `<`, `>`
 - Unary: `-` (Negation), `!` (Not)
+
+### Reference Tables
+
+**Keycodes (for `get_key`)**
+| Key | Code |
+| :--- | :--- |
+| Left Arrow | 37 |
+| Up Arrow | 38 |
+| Right Arrow | 39 |
+| Down Arrow | 40 |
+| 0 - 9 | 48 - 57 |
+| A - Z | 65 - 90 |
+
+*Note: Letter keys always return uppercase codes (65-90), regardless of Shift/Caps Lock.*
+
+**Common ASCII Codes**
+| Char | Code | Description |
+| :--- | :--- | :--- |
+| ` ` | 32 | Empty Space |
+| `#` | 35 | Wall |
+| `$` | 36 | Gold / Coin |
+| `*` | 42 | Level Indicator |
+| `>` | 62 | Stairs / Goal |
+| `@` | 64 | Player |
+| `A` - `Z` | 65 - 90 | Uppercase Letters |
+| `a` - `z` | 97 - 122 | Lowercase Letters |
+| `M` | 77 | Monster |
+| `O` | 79 | Object |
 
 ### Example
 
@@ -140,7 +168,7 @@ The language provides direct access to WebAssembly memory.
 +------------------+
 
 +------------------+
-| @ dungeon frame  |
+| @ dungeon main   |
 |                  |
 |  gold x = mem_get(20000) |
 |  scribe(x, 12, 64) |

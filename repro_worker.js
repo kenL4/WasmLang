@@ -8,7 +8,6 @@ async function run() {
         function present() {
             // Send memory buffer to main thread
             const buffer = new Uint8Array(memory.buffer, 0, 80 * 25);
-            // self.postMessage({ type: 'frame', buffer: buffer });
 
             // Simple throttle to ~60fps
             const start = Date.now();
