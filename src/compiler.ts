@@ -4,6 +4,7 @@ import { Emitter, Opcode, Section, ValType } from './emitter';
 import { Lexer } from './lexer';
 import { Parser, Program, ASTNode, VarDecl, Assign, If, While, For, Block, Call, BinaryExpr, Identifier, NumberLiteral, Expression, FuncDecl, Return, ArrayAccess, UnaryExpr } from './parser';
 import { TokenType } from './lexer';
+import { NethackInterpreter } from './nethack';
 
 export class Compiler {
     private emitter: Emitter = new Emitter();
@@ -75,6 +76,13 @@ export class Compiler {
 
         this.emitModule(program, signatures);
         return this.emitter.getBuffer();
+    }
+
+    compileNethack(source: string): Uint8Array {
+        const interpreter = new NethackInterpreter();
+        const transpiled = interpreter.transpile(source);
+        console.log("Transpiled Nethack Code:\n" + transpiled);
+        return this.compile(transpiled);
     }
 
     private hasReturnValue(block: Block): boolean {
