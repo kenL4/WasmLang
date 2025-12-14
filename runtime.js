@@ -4,9 +4,24 @@ const status = document.getElementById('status');
 
 async function run() {
     try {
-        status.innerText = "Downloading...";
-        const response = await fetch('test.wasm');
-        const bytes = await response.arrayBuffer();
+        status.innerText = "Checking for Rituals...";
+
+        let bytes;
+        const pendingRitual = localStorage.getItem('gothica_pending_ritual');
+
+        if (pendingRitual) {
+            status.innerText = "Loading Ritual...";
+            const binaryString = window.atob(pendingRitual);
+            const len = binaryString.length;
+            bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+        } else {
+            status.innerText = "Downloading Default...";
+            const response = await fetch('test.wasm');
+            bytes = await response.arrayBuffer();
+        }
 
         status.innerText = "Starting Worker...";
         const worker = new Worker('worker.js');

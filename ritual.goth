@@ -1,0 +1,16 @@
+soul x = 10;
+soul y = 20;
+
+ritual update() {
+    crossroad (x > 5) {
+        x = x - 1;
+    } path {
+        x = x + 1;
+    }
+    
+    circle (y > 0) {
+        y = y - 1;
+    }
+    
+    conclude x;
+}

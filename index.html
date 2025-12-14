@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +17,7 @@
             height: 100vh;
             margin: 0;
         }
+
         #screen {
             background-color: #000;
             border: 2px solid #333;
@@ -23,20 +25,40 @@
             font-size: 16px;
             line-height: 16px;
             white-space: pre;
-            width: 80ch; /* 80 characters wide */
-            height: 25em; /* 25 lines high */
+            width: 80ch;
+            /* 80 characters wide */
+            height: 25em;
+            /* 25 lines high */
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         }
+
         #status {
             margin-top: 10px;
             color: #888;
         }
     </style>
 </head>
+
 <body>
+    <h1>Gothica Demo</h1>
+    <p>
+        <a href="editor.html"
+            style="color: #d4af37; text-decoration: none; border: 1px solid #d4af37; padding: 10px; display: inline-block; margin-bottom: 20px;">Enter
+            the Cathedral (VPL Editor)</a>
+        <button id="btn-reset"
+            style="background-color: #333; color: #888; border: 1px solid #555; padding: 10px; cursor: pointer; margin-left: 10px;">Reset
+            Cartridge</button>
+    </p>
+    <script>
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            localStorage.removeItem('gothica_pending_ritual');
+            window.location.reload();
+        });
+    </script>
     <div id="screen"></div>
     <div id="status">Loading...</div>
     <script src="runtime.js"></script>
 </body>
+
 </html>

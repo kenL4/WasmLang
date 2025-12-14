@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gothica: Cathedral Graph</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap');
+
+        body {
+            background-color: #0a0a0a;
+            color: #a0a0a0;
+            font-family: 'MedievalSharp', cursive;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        #sidebar {
+            width: 250px;
+            background-color: #111;
+            border-right: 2px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: #8b0000;
+            text-shadow: 0 0 5px #ff0000;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .reliquary {
+            background-color: #1a1a1a;
+            border: 1px solid #444;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: grab;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reliquary:hover {
+            border-color: #8b0000;
+            box-shadow: 0 0 10px rgba(139, 0, 0, 0.3);
+            transform: translateX(5px);
+        }
+
+        .reliquary-icon {
+            font-size: 24px;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background-image:
+                radial-gradient(circle at 50% 50%, #151515 0%, #0a0a0a 100%),
+                linear-gradient(rgba(20, 20, 20, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 20, 20, 0.5) 1px, transparent 1px);
+            background-size: 100% 100%, 50px 50px, 50px 50px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #2a0a0a;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 10px 20px;
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background-color: #4a0a0a;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        #screen-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 300px;
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 2px solid #444;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            overflow: hidden;
+            display: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        #screen-overlay.visible {
+            display: block;
+        }
+
+        .node-label {
+            font-size: 14px;
+            color: #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="sidebar">
+        <h1>Gothica</h1>
+
+        <div class="reliquary" draggable="true" data-type="soul">
+            <span class="reliquary-icon">☠</span>
+            <span class="node-label">Soul Vessel</span>
+        </div>
+
+        <div class="reliquary" draggable="true" data-type="altar">
+            <span class="reliquary-icon">⛧</span>
+            <span class="node-label">Ritual Altar</span>
+        </div>
+
+        <div class="reliquary" draggable="true" data-type="crossroad">
+            <span class="reliquary-icon">☩</span>
+            <span class="node-label">Crossroad</span>
+        </div>
+
+        <div class="reliquary" draggable="true" data-type="circle">
+            <span class="reliquary-icon">⟳</span>
+            <span class="node-label">Circle</span>
+        </div>
+
+        <div class="reliquary" draggable="true" data-type="incantation">
+            <span class="reliquary-icon">📜</span>
+            <span class="node-label">Incantation</span>
+        </div>
+
+        <div class="reliquary" draggable="true" data-type="conclude">
+            <span class="reliquary-icon">⚰</span>
+            <span class="node-label">Conclude</span>
+        </div>
+
+        <div
+            style="margin-top: auto; padding-top: 20px; border-top: 1px solid #333; color: #888; font-family: 'Courier New', monospace; font-size: 12px;">
+            <p><strong>Controls:</strong></p>
+            <p>• Drag to move</p>
+            <p>• <strong>Shift + Drag</strong> to connect nodes</p>
+            <p>• <strong>Double Click</strong> to edit</p>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="cathedral-floor"></canvas>
+
+        <div id="controls">
+            <button id="btn-ritualize">Ritualize</button>
+            <button id="btn-clear">Cleanse</button>
+        </div>
+
+        <div id="screen-overlay">
+            <div id="screen-content"></div>
+        </div>
+    </div>
+
+    <!-- Load the VPL script -->
+    <script type="module" src="dist/vpl.js"></script>
+</body>
+
+</html>

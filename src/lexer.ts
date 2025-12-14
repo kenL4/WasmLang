@@ -82,13 +82,13 @@ export class Lexer {
 
                 let type = TokenType.Identifier;
                 switch (id) {
-                    case 'var': type = TokenType.Var; break;
-                    case 'if': type = TokenType.If; break;
-                    case 'else': type = TokenType.Else; break;
-                    case 'while': type = TokenType.While; break;
-                    case 'for': type = TokenType.For; break;
-                    case 'func': type = TokenType.Func; break;
-                    case 'return': type = TokenType.Return; break;
+                    case 'soul': type = TokenType.Var; break;
+                    case 'crossroad': type = TokenType.If; break;
+                    case 'path': type = TokenType.Else; break;
+                    case 'circle': type = TokenType.While; break;
+                    case 'cycle': type = TokenType.For; break;
+                    case 'ritual': type = TokenType.Func; break;
+                    case 'conclude': type = TokenType.Return; break;
                 }
                 tokens.push({ type, value: id, line: this.line });
                 continue;
@@ -134,6 +134,14 @@ export class Lexer {
                         throw new Error(`Unexpected character: ! at line ${this.line}`);
                     }
                     break;
+                case '☠': tokens.push({ type: TokenType.Var, value: '☠', line: this.line }); break;
+                case '☩': tokens.push({ type: TokenType.If, value: '☩', line: this.line }); break;
+                case '☈': tokens.push({ type: TokenType.Else, value: '☈', line: this.line }); break;
+                case '⟳': tokens.push({ type: TokenType.While, value: '⟳', line: this.line }); break;
+                case '↺': tokens.push({ type: TokenType.For, value: '↺', line: this.line }); break;
+                case '⛧': tokens.push({ type: TokenType.Func, value: '⛧', line: this.line }); break;
+                case '⚰': tokens.push({ type: TokenType.Return, value: '⚰', line: this.line }); break;
+
                 default:
                     throw new Error(`Unexpected character: ${char} at line ${this.line}`);
             }
