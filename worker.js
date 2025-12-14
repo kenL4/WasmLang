@@ -6,6 +6,11 @@ self.onmessage = async (e) => {
         try {
             const memory = new WebAssembly.Memory({ initial: 1 });
 
+            let sleepView = null;
+            if (typeof SharedArrayBuffer !== 'undefined') {
+                sleepView = new Int32Array(new SharedArrayBuffer(4));
+            }
+
             function present() {
                 // Send memory buffer to main thread
                 const buffer = new Uint8Array(memory.buffer, 0, 80 * 25);
@@ -18,6 +23,7 @@ self.onmessage = async (e) => {
 
             function get_key() {
                 const k = lastKey;
+                if (k !== 0) console.log("Key pressed:", k);
                 lastKey = 0; // Consume key
                 return k;
             }
@@ -42,8 +48,20 @@ self.onmessage = async (e) => {
             const results = await WebAssembly.instantiate(e.data.wasm, importObject);
             self.postMessage({ type: 'ready' });
 
-            // Run main function
-            results.instance.exports.run();
+            // Run init function
+            results.instance.exports.init();
+
+            // Run loop in JS to allow event processing
+            function loop() {
+                const start = Date.now();
+                results.instance.exports.main();
+
+                // Throttle to ~30fps
+                const elapsed = Date.now() - start;
+                const delay = Math.max(0, 33 - elapsed);
+                setTimeout(loop, delay);
+            }
+            loop();
 
         } catch (err) {
             self.postMessage({ type: 'error', message: err.message });

@@ -1,5 +1,4 @@
 
-
 import { Emitter, Opcode, Section, ValType } from './emitter';
 import { Lexer } from './lexer';
 import { Parser, Program, ASTNode, VarDecl, Assign, If, While, Action, Call, BinaryExpr, Identifier, NumberLiteral, BooleanLiteral, Expression, Room, Return, UnaryExpr } from './parser';
@@ -31,21 +30,24 @@ export class Compiler {
         // Imports take up the first N indices
         // We have:
         // 0: env.random (void -> i32)
-        // 1: env.present (void -> void) - maybe keep?
+        // 1: env.present (void -> void)
+        // 2: env.get_key (void -> i32)
         // Verbs: fight, open, drink, equip, pray, cast (6 verbs)
         // Let's say:
         // 0: random
-        // 1: fight
-        // 2: open
-        // 3: drink
-        // 4: equip
-        // 5: pray
-        // 6: cast
+        // 1: present
+        // 2: get_key
+        // 3: fight
+        // 4: open
+        // 5: drink
+        // 6: equip
+        // 7: pray
+        // 8: cast
 
-        // Internal functions start at 7
+        // Internal functions start at 9
         // 'run' export will be the 'main' room
 
-        let funcIndex = 7;
+        let funcIndex = 9;
         for (const room of program.rooms) {
             this.roomIndices.set(room.name, funcIndex++);
         }
@@ -63,7 +65,7 @@ export class Compiler {
         // Type Section
         this.emitter.emitSection(Section.Type, () => {
             this.emitter.emitU32(3);
-            // Type 0: () -> i32 (Room function, random)
+            // Type 0: () -> i32 (Room function, random, get_key)
             this.emitter.emit(0x60);
             this.emitter.emitU32(0);
             this.emitter.emitU32(1);
@@ -102,7 +104,7 @@ export class Compiler {
             this.emitter.emitString('env');
             this.emitter.emitString('present');
             this.emitter.emit(0x00); // func
-            this.emitter.emitU32(2); // type 2: () -> void (need to define this type!)
+            this.emitter.emitU32(2); // type 2: () -> void
 
             // env.get_key (2)
             this.emitter.emitString('env');
@@ -139,12 +141,14 @@ export class Compiler {
 
         // Export Section
         this.emitter.emitSection(Section.Export, () => {
-            this.emitter.emitU32(1);
-            this.emitter.emitString('run');
-            this.emitter.emit(0x00); // func
-            const mainIndex = this.roomIndices.get('main');
-            if (mainIndex === undefined) throw new Error("No main room");
-            this.emitter.emitU32(mainIndex);
+            this.emitter.emitU32(program.rooms.length);
+            for (const room of program.rooms) {
+                this.emitter.emitString(room.name);
+                this.emitter.emit(0x00); // func
+                const index = this.roomIndices.get(room.name);
+                if (index === undefined) throw new Error(`Unknown room ${room.name}`);
+                this.emitter.emitU32(index);
+            }
         });
 
         // Code Section
@@ -167,7 +171,6 @@ export class Compiler {
         for (const stmt of room.body) {
             this.findLocals(stmt, this.locals);
         }
-        // Also exit expression might use locals? No, exit uses vars defined in body.
 
         // Emit locals decl
         const numLocals = this.locals.size;
@@ -300,6 +303,20 @@ export class Compiler {
                 this.emitter.emit(Opcode.I32Store8);
                 this.emitter.emitU32(0); // align
                 this.emitter.emitU32(0); // offset
+            } else if (stmt.name === 'mem_set') {
+                // mem_set(addr, val) -> i32.store
+                this.emitExpression(stmt.args[0], program); // addr
+                this.emitExpression(stmt.args[1], program); // val
+                this.emitter.emit(Opcode.I32Store);
+                this.emitter.emitU32(2); // align
+                this.emitter.emitU32(0); // offset
+            } else if (stmt.name === 'mem_get') {
+                // mem_get as statement is useless but valid
+                this.emitExpression(stmt.args[0], program);
+                this.emitter.emit(Opcode.I32Load);
+                this.emitter.emitU32(2);
+                this.emitter.emitU32(0);
+                this.emitter.emit(Opcode.Drop);
             } else if (stmt.name === 'reveal') {
                 this.emitter.emit(Opcode.Call);
                 this.emitter.emitU32(1); // env.present
@@ -312,6 +329,14 @@ export class Compiler {
                 this.emitter.emitU32(funcIndex);
                 this.emitter.emit(Opcode.Drop); // Rooms return i32, but as a statement we drop it
             }
+        } else if (stmt instanceof Return) {
+            if (stmt.value) {
+                this.emitExpression(stmt.value, program);
+            } else {
+                this.emitter.emit(Opcode.I32Const);
+                this.emitter.emitS32(0);
+            }
+            this.emitter.emit(Opcode.Return);
         }
     }
 
@@ -358,6 +383,25 @@ export class Compiler {
             } else if (expr.name === 'get_key') {
                 this.emitter.emit(Opcode.Call);
                 this.emitter.emitU32(2); // env.get_key
+            } else if (expr.name === 'mem_get') {
+                // mem_get(addr) -> i32.load
+                // Stack: [addr]
+                this.emitExpression(expr.args[0], program);
+                this.emitter.emit(Opcode.I32Load);
+                this.emitter.emitU32(2); // align
+                this.emitter.emitU32(0); // offset
+            } else if (expr.name === 'scan') {
+                // scan(x, y) -> i32.load8_u(y * 80 + x)
+                this.emitExpression(expr.args[1], program); // y
+                this.emitter.emit(Opcode.I32Const);
+                this.emitter.emitS32(80);
+                this.emitter.emit(Opcode.I32Mul);
+                this.emitExpression(expr.args[0], program); // x
+                this.emitter.emit(Opcode.I32Add);
+
+                this.emitter.emit(Opcode.I32Load8U);
+                this.emitter.emitU32(0); // align
+                this.emitter.emitU32(0); // offset
             } else {
                 const funcIndex = this.roomIndices.get(expr.name);
                 if (funcIndex === undefined) throw new Error(`Unknown room ${expr.name}`);

@@ -1,24 +1,32 @@
-var x = 40;
-var y = 12;
-var dx = 1;
-var dy = 1;
-
-func update() {
-  // Clear previous position
-  set_char(x, y, 32); 
-
-  // Update position
-  x = x + dx;
-  y = y + dy;
-
-  // Bounce off walls
-  if (x > 78) { dx = 0 - 1; }
-  if (x < 1) { dx = 1; }
-  if (y > 23) { dy = 0 - 1; }
-  if (y < 1) { dy = 1; }
-
-  // Draw ball 'O'
-  set_char(x, y, 79);
-  
-  present();
-}
++---------------------+
+| @ dungeon main      |
+|                     |
+|  gold x = 40        |
+|  gold y = 12        |
+|  gold dx = 1        |
+|  gold dy = 1        |
+|                     |
+|  wander(true) {     |
+|    scribe(x, y, 32) |
+|    x += dx          |
+|    y += dy          |
+|                     |
+|    ? (78 < x) {     |
+|      dx = 0 - 1     |
+|    }                |
+|    ? (x < 1) {      |
+|      dx = 1         |
+|    }                |
+|    ? (23 < y) {     |
+|      dy = 0 - 1     |
+|    }                |
+|    ? (y < 1) {      |
+|      dy = 1         |
+|    }                |
+|                     |
+|    scribe(x, y, 79) |
+|    reveal()         |
+|  }                  |
+|                     |
+|  > 0                |
++---------------------+

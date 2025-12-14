@@ -1,10 +1,6 @@
 
 export enum TokenType {
-    Var,
-    If,
-    Else,
-    While,
-    For,
+    // Standard
     Identifier,
     Number,
     LBrace,
@@ -22,26 +18,29 @@ export enum TokenType {
     Comma,
     LBracket,
     RBracket,
-    Func,
-    Return,
     NotEquals,
     DoubleEquals,
+    PlusEquals,
+    MinusEquals,
     EOF,
-    // New Tokens
-    Wall,
-    Path,
-    Dot,
-    Player,
-    Exit,
-    Query,
-    Bang,
-    Dungeon,
-    Wander,
+
+    // Dungeon Specific
+    Wall,       // + - |
+    Path,       // #
+    Dot,        // .
+    Player,     // @
+    Exit,       // >
+    Query,      // ?
+    Bang,       // !
+    Dungeon,    // 'dungeon'
+    Spiral,     // 'spiral'
+
     // Types
     TypeGold,
     TypeHp,
     TypeMana,
     TypeItem,
+
     // Verbs
     VerbFight,
     VerbOpen,
@@ -49,11 +48,10 @@ export enum TokenType {
     VerbEquip,
     VerbPray,
     VerbCast,
+
     // Literals
     True,
-    False,
-    PlusEquals,
-    MinusEquals
+    False
 }
 
 export interface Token {
@@ -109,15 +107,8 @@ export class Lexer {
 
                 let type = TokenType.Identifier;
                 switch (id) {
-                    case 'var': type = TokenType.Var; break;
-                    case 'if': type = TokenType.If; break;
-                    case 'else': type = TokenType.Else; break;
-                    case 'while': type = TokenType.While; break;
-                    case 'for': type = TokenType.For; break;
-                    case 'func': type = TokenType.Func; break;
-                    case 'return': type = TokenType.Return; break;
                     case 'dungeon': type = TokenType.Dungeon; break;
-                    case 'wander': type = TokenType.Wander; break;
+                    case 'spiral': type = TokenType.Spiral; break;
                     case 'gold': type = TokenType.TypeGold; break;
                     case 'hp': type = TokenType.TypeHp; break;
                     case 'mana': type = TokenType.TypeMana; break;
@@ -153,15 +144,23 @@ export class Lexer {
                     if (this.input[this.pos + 1] === '=') {
                         this.advance();
                         tokens.push({ type: TokenType.PlusEquals, value: '+=', line: this.line });
+                    } else if (this.input[this.pos + 1] === '-' || this.input[this.pos + 1] === '+' || this.input[this.pos + 1] === '|') {
+                        // Corner of a wall: +---+, +|
+                        tokens.push({ type: TokenType.Wall, value: '+', line: this.line });
                     } else {
-                        // Heuristic: + is Plus if previous token is an expression ender
+                        // Heuristic: if previous token was an identifier, number, or closing paren, this is likely an operator
+                        // Also if it was an operator or assignment, it's a unary operator
                         const lastType = tokens.length > 0 ? tokens[tokens.length - 1].type : TokenType.EOF;
-                        if (lastType === TokenType.Number ||
-                            lastType === TokenType.Identifier ||
-                            lastType === TokenType.RParen ||
-                            lastType === TokenType.RBracket ||
-                            lastType === TokenType.True ||
-                            lastType === TokenType.False) {
+                        const isExpressionPart = [
+                            TokenType.Number, TokenType.Identifier, TokenType.RParen, TokenType.RBracket,
+                            TokenType.True, TokenType.False,
+                            TokenType.Equals, TokenType.PlusEquals, TokenType.MinusEquals,
+                            TokenType.Plus, TokenType.Minus, TokenType.Multiply, TokenType.Divide,
+                            TokenType.Gt, TokenType.Lt, TokenType.DoubleEquals, TokenType.NotEquals,
+                            TokenType.LParen, TokenType.LBracket, TokenType.Comma, TokenType.Exit
+                        ].includes(lastType);
+
+                        if (isExpressionPart) {
                             tokens.push({ type: TokenType.Plus, value: '+', line: this.line });
                         } else {
                             tokens.push({ type: TokenType.Wall, value: '+', line: this.line });
@@ -173,11 +172,21 @@ export class Lexer {
                         this.advance();
                         tokens.push({ type: TokenType.MinusEquals, value: '-=', line: this.line });
                     } else {
-                        const next = this.input[this.pos + 1];
-                        if (next === '-' || next === '+' || next === '|' || next === '\n' || next === undefined || next === '') {
-                            tokens.push({ type: TokenType.Wall, value: '-', line: this.line });
-                        } else {
+                        // Heuristic for minus vs wall
+                        const lastType = tokens.length > 0 ? tokens[tokens.length - 1].type : TokenType.EOF;
+                        const isExpressionPart = [
+                            TokenType.Number, TokenType.Identifier, TokenType.RParen, TokenType.RBracket,
+                            TokenType.True, TokenType.False,
+                            TokenType.Equals, TokenType.PlusEquals, TokenType.MinusEquals,
+                            TokenType.Plus, TokenType.Minus, TokenType.Multiply, TokenType.Divide,
+                            TokenType.Gt, TokenType.Lt, TokenType.DoubleEquals, TokenType.NotEquals,
+                            TokenType.LParen, TokenType.LBracket, TokenType.Comma, TokenType.Exit
+                        ].includes(lastType);
+
+                        if (isExpressionPart) {
                             tokens.push({ type: TokenType.Minus, value: '-', line: this.line });
+                        } else {
+                            tokens.push({ type: TokenType.Wall, value: '-', line: this.line });
                         }
                     }
                     break;
@@ -198,7 +207,7 @@ export class Lexer {
                 case '*': tokens.push({ type: TokenType.Multiply, value: '*', line: this.line }); break;
                 case '/':
                     if (this.input[this.pos + 1] === '/') {
-                        // Comment: consume until end of line
+                        // Comment
                         while (this.peek() !== '\n' && this.peek() !== '') {
                             this.advance();
                         }

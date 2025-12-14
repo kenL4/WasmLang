@@ -1,15 +1,308 @@
++----------------------+
+| @ dungeon init       |
+|                      |
+|   gold x = 0         |
+|   gold y = 0         |
+|                      |
+|   generate_dungeon() |
+|   > 0                |
++----------------------+
+
++----------------------+
+| @ dungeon main       |
+|                      |
+|   update()           |
+|   > 0                |
++----------------------+
+
++-----------------------------------+
+| @ dungeon clear_map               |
+|                                   |
+|   gold i = 0                      |
+|   spiral(i < 2000) {              |
+|     mem_set(2000 * 4 + i * 4, 35) |
+|     i += 1                        |
+|   }                               |
+|                                   |
+|   > 0                             |
++-----------------------------------+
+
++----------------------------------------------+
+| @ dungeon set_tile                           |
+|                                              |
+|   gold x = mem_get(20000)                    |
+|   gold y = mem_get(20004)                    |
+|   gold tile = mem_get(20008)                 |
+|                                              |
+|   ? (x < 0) { > 0 }                          |
+|   ? (y < 0) { > 0 }                          |
+|   ? (79 < x) { > 0 }                         |
+|   ? (23 < y) { > 0 }                         |
+|                                              |
+|   mem_set(2000 * 4 + (y * 80 + x) * 4, tile) |
+|                                              |
+|   > 0                                        |
++----------------------------------------------+
+
++-----------------------------------------+
+| @ dungeon get_tile                      |
+|                                         |
+|  gold x = mem_get(20000)                |
+|  gold y = mem_get(20004)                |
+|                                         |
+|  ? (x < 0) { > 35 }                     |
+|  ? (y < 0) { > 35 }                     |
+|  ? (79 < x) { > 35 }                    |
+|  ? (23 < y) { > 35 }                    |
+|                                         |
+|  > mem_get(2000 * 4 + (y * 80 + x) * 4) |
++-----------------------------------------+
+
++--------------------------+
+| @ dungeon generate_room  |
+|                          |
+|  gold x = mem_get(20000) |
+|  gold y = mem_get(20004) |
+|  gold w = mem_get(20008) |
+|  gold h = mem_get(20012) |
+|                          |
+|  gold ry = y             |
+|  spiral(ry < y + h) {    |
+|    gold rx = x   |
+|    spiral(rx < x + w) {  |
+|      mem_set(20000, rx)  |
+|      mem_set(20004, ry)  |
+|      mem_set(20008, 32)  |
+|      set_tile()          |
+|      rx += 1             |
+|    }                     |
+|    ry += 1               |
+|  }                       |
+|                          |
+|  > 0                     |
++--------------------------+
+
++--------------------------+
+| @ dungeon rand_mod       |
+|                          |
+|  gold n = mem_get(20000) |
+|  gold r = random()       |
+|  gold div = r / n        |
+|  > r - div * n           |
++--------------------------+
+
++------------------------------------------+
+| @ dungeon generate_dungeon               |
+|                                          |
+|  clear_map()                             |
+|                                          |
+|  gold map_complexity = mem_get(20024)    |
+|  gold num_rooms = 5 + map_complexity * 2 |
+|  gold prev_x = 0                         |
+|  gold prev_y = 0                         |
+|                                          |
+|  gold i = 0                              |
+|  spiral(i < num_rooms) {                 |
+|    mem_set(20000, 10)                    |
+|    gold w = 5 + rand_mod()               |
+|    mem_set(20000, 6)                     |
+|    gold h = 4 + rand_mod()               |
+|    mem_set(20000, 80 - w - 2)            |
+|    gold x = 1 + rand_mod()               |
+|    mem_set(20000, 24 - h - 2)            |
+|    gold y = 1 + rand_mod()               |
+|                                          |
+|    mem_set(20000, x)                     |
+|    mem_set(20004, y)                     |
+|    mem_set(20008, w)                     |
+|    mem_set(20012, h)                     |
+|    generate_room()                       |
+|                                          |
+|    ? (0 < i) {                           |
+|      gold cx = prev_x                    |
+|      gold cy = prev_y                    |
+|      spiral(cx != x) {                   |
+|        mem_set(20000, cx)                |
+|        mem_set(20004, cy)                |
+|        mem_set(20008, 32)                |
+|        set_tile()                        |
+|        ? (cx < x) { cx += 1 }            |
+|        ? (x < cx) { cx -= 1 }            |
+|      }                                   |
+|      spiral(cy != y) {                   |
+|        mem_set(20000, cx)                |
+|        mem_set(20004, cy)                |
+|        mem_set(20008, 32)                |
+|        set_tile()                        |
+|        ? (cy < y) { cy += 1 }            |
+|        ? (y < cy) { cy -= 1 }            |
+|      }                                   |
+|    }                                     |
+|    ? (i < 1) {                           |
+|      mem_set(20016, x + 1)               |
+|      mem_set(20020, y + 1)               |
+|    }                                     |
+|                                          |
+|    prev_x = x + w / 2                    |
+|    prev_y = y + h / 2                    |
+|    i += 1                                |
+|  }                                       |
+|                                          |
+|  mem_set(20000, prev_x)                  |
+|  mem_set(20004, prev_y)                  |
+|  mem_set(20008, 62)                      |
+|  set_tile()                              |
+|  mem_set(20028, prev_x)                  |
+|  mem_set(20032, prev_y)                  |
+|                                          |
+|  gold has_monsters = mem_get(20036)      |
+|  ? (0 < has_monsters) {                  |
+|    gold m = 0                            |
+|    spiral(m < 5) {                       |
+|      mem_set(20000, 78)                  |
+|      gold mx = rand_mod() + 1            |
+|      mem_set(20000, 22)                  |
+|      gold my = rand_mod() + 1            |
+|      mem_set(20000, mx)                  |
+|      mem_set(20004, my)                  |
+|      gold t = get_tile()                 |
+|      ? (t == 32) {                       |
+|        mem_set(20000, mx)                |
+|        mem_set(20004, my)                |
+|        mem_set(20008, 77)                |
+|        set_tile()                        |
+|      }                                   |
+|      m += 1                              |
+|    }                                     |
+|  }                                       |
+|                                          |
+|  > 0                                     |
++------------------------------------------+
+
++-------------------------------------+
+| @ dungeon draw_status               |
+|                                     |
+|  gold i = 0                         |
+|  spiral(i < 80) {                   |
+|    scribe(i, 24, 32)                |
+|    i += 1                           |
+|  }                                  |
+|                                     |
+|  gold coins = mem_get(20040)        |
+|  gold c = 0                         |
+|  spiral(c < coins) {                |
+|    ? (c < 70) { scribe(c, 24, 36) } |
+|    c += 1                           |
+|  }                                  |
+|                                     |
+|  gold level = mem_get(20044)        |
+|  gold l = 0                         |
+|  spiral(l < level) {                |
+|    scribe(79 - l, 24, 42)           |
+|    l += 1                           |
+|  }                                  |
+|                                     |
+|  > 0                                |
++-------------------------------------+
+
++----------------------------------------------------+
+| @ dungeon draw                                     |
+|                                                    |
+|  gold player_x = mem_get(20016)                    |
+|  gold player_y = mem_get(20020)                    |
+|  gold y = 0                                        |
+|  spiral(y < 24) {                                  |
+|    gold x = 0                                      |
+|    spiral(x < 80) {                                |
+|      gold t = mem_get(2000 * 4 + (y * 80 + x) * 4) |
+|      ? (x == player_x) {                           |
+|        ? (y == player_y) {                         |
+|          t = 64                                    |
+|        }                                           |
+|      }                                             |
+|      scribe(x, y, t)                               |
+|      x += 1                                        |
+|    }                                               |
+|    y += 1                                          |
+|  }                                                 |
+|  draw_status()                                     |
+|  > 0                                               |
++----------------------------------------------------+
+
++---------------------------------+
+| @ dungeon move_player           |
+|                                 |
+|  gold k = get_key()             |
+|  gold dx = 0                    |
+|  gold dy = 0                    |
+|                                 |
+|  ? (k == 37) { dx = -1 }        |
+|  ? (k == 39) { dx = 1 }         |
+|  ? (k == 38) { dy = -1 }        |
+|  ? (k == 40) { dy = 1 }         |
+|                                 |
+|  ? (dx == 0) {                  |
+|    ? (dy == 0) { > 0 }          |
+|  }                              |
+|                                 |
+|  gold player_x = mem_get(20016) |
+|  gold player_y = mem_get(20020) |
+|  gold next_x = player_x + dx    |
+|  gold next_y = player_y + dy    |
+|                                 |
+|  mem_set(20000, next_x)         |
+|  mem_set(20004, next_y)         |
+|  gold tile = get_tile()         |
+|  ? (tile != 35) {               |
+|    mem_set(20016, next_x)       |
+|    mem_set(20020, next_y)       |
+|  }                              |
+|  > 0                            |
++---------------------------------+
+
++-----------------------------------------------+
+| @ dungeon check_goal                          |
+|                                               |
+|  gold player_x = mem_get(20016)               |
+|  gold player_y = mem_get(20020)               |
+|  gold goal_x = mem_get(20028)                 |
+|  gold goal_y = mem_get(20032)                 |
+|                                               |
+|  ? (player_x == goal_x) {                     |
+|    ? (player_y == goal_y) {                   |
+|      gold coins = mem_get(20040)              |
+|      coins += 1                               |
+|      mem_set(20040, coins)                    |
+|      gold level = mem_get(20044)              |
+|      level += 1                               |
+|      mem_set(20044, level)                    |
+|                                               |
+|      ? (5 < coins) {                          |
+|        gold has_monsters = mem_get(20036)     |
+|        ? (has_monsters == 0) {                |
+|          mem_set(20036, 1)                    |
+|          coins -= 5                           |
+|        }                                      |
+|        ? (0 < has_monsters) {                 |
+|          gold map_complexity = mem_get(20024) |
+|          map_complexity += 1                  |
+|          mem_set(20024, map_complexity)       |
+|          coins -= 5                           |
+|        }                                      |
+|        mem_set(20040, coins)                  |
+|      generate_dungeon()                       |
+|    }                                          |
+|   }                                           |
+|  }                                            |
+|  > 0                                          |
++-----------------------------------------------+
+
 +------------------+
-| @ dungeon main   |
+| @ dungeon update |
 |                  |
-|  gold score = 0  |
-|                  |
-|  ? (score < 10)  |
-|  +------------+  |
-|  | {          |  |
-|  | fight rat  |  #
-|  | score += 1 |  #
-|  | }          |  #
-|  +------------+  #
-|                  |
-|  > score         |
+|  move_player()   |
+|  check_goal()    |
+|  draw()          |
+|  reveal()        |
+|  > 0             |
 +------------------+

@@ -4,10 +4,11 @@ A NetHack-inspired, ASCII-hinted programming language that compiles to WebAssemb
 
 ## Features
 
-- **Visual Syntax**: Code is structured into "rooms" defined by ASCII art walls.
+- **Visual Syntax**: Code is structured into "rooms" defined by (optional) ASCII art walls.
 - **Room-Based**: Functions are rooms. You "enter" a room to call a function.
-- **Verbs**: Built-in actions like `fight`, `open`, `drink`, `equip`, `pray`, `cast`.
-- **ASCII Control Flow**: `?` for conditionals, `wander` for loops.
+- **Verbs**: Built-in actions like `fight`, `open`, `drink`, `equip`, `pray`, `cast` (currently don't do anything, but we can change these for the game).
+- **ASCII Control Flow**: `?` for conditionals, `spiral` for while loops.
+- **Memory Access**: Direct memory access via `mem_get`, `mem_set`, and `scan`.
 - **Zero Dependencies**: Compiles directly to WASM.
 
 ## Getting Started
@@ -28,23 +29,56 @@ A NetHack-inspired, ASCII-hinted programming language that compiles to WebAssemb
    npm run build
    ```
 
+### Running Code
+
+Run the compiler script with your source file:
+```bash
+npx ts-node run_compiler.ts dungeon.jj
+```
+This generates `test.wasm`.
+
+To run the generated WASM, start the local server:
+```bash
+npx http-server -c-1
+```
+Then open `http://localhost:8080` in your browser.
+
 ## Language Guide
 
 ### Rooms
-A program consists of multiple rooms. The entry point is the `main` room.
+A program consists of multiple rooms.
+- `init`: Called once at startup.
+- `main` (or `frame`): Called repeatedly by the host (game loop).
+
 Rooms are surrounded by ASCII walls (`+`, `-`, `|`).
 
 ```
 +------------------+
-| @ dungeon main   |
+| @ dungeon init   |
 |                  |
-|  gold score = 0  |
-|  > score         |
+|  gold x = 0      |
+|  > 0             |
 +------------------+
 ```
 
+However, this is not a strict requirement. The following is also valid:
+```
+@ dungeon init
+
+ gold x = 0
+ > 0
+```
+
+### Entering Rooms (Functions)
+To enter another room (calling the function), simply use its name followed by parentheses.
+Note that rooms do not accept arguments directly. You must pass data via global memory (see Memory & Intrinsics).
+
+```
+some_room()
+```
+
 ### Variables
-Types include `gold` (int), `hp`, `mana`, `item`.
+Types include `gold` (int), `hp`, `mana`, `item`. All map to 32-bit integers.
 ```
 gold coins = 10
 hp health = 100
@@ -54,64 +88,63 @@ hp health = 100
 
 **Conditionals (`?`)**:
 ```
-? (health < 10)
-+------------+
-| {          |
-| drink potion|
-| }          |
-+------------+
+? (health < 10) {
+  drink potion
+}
 ```
 
-**Loops (`wander`)**:
+**Loops (`spiral`)**:
 ```
-wander (coins < 100)
-+------------+
-| {          |
-| fight rat  |
-| coins += 10|
-| }          |
-+------------+
+spiral (coins < 100) {
+  fight goblin
+  coins += 10
+}
 ```
 
-### Verbs
-Built-in actions that players will use (WHEN DONE)
-- `fight <target>`
-- `open <target>`
-- `drink <target>`
-- `equip <target>`
-- `pray <target>`
-- `cast <spell>`
+**Early Return (`>`)**:
+Use `>` to return a value from a room.
+```
+> 0
+```
 
-### Environment Functions
-- `scribe(x, y, char)`: Write ASCII character to screen buffer.
-- `reveal()`: Render the screen buffer.
-- `get_key()`: Get last key press.
-- `random()`: Get random number.
+### Memory & Intrinsics
+
+The language provides direct access to WebAssembly memory.
+
+- **Screen Buffer**: Bytes 0-1999 (80x25 grid).
+- **General Memory**: Bytes 2000+ are available for use.
+
+**Intrinsics**:
+- `mem_get(addr)`: Read i32 from address.
+- `mem_set(addr, val)`: Write i32 to address.
+- `scan(x, y)`: Read byte from screen buffer at (x, y).
+- `scribe(x, y, char)`: Write byte to screen buffer at (x, y).
+- `reveal()`: Render the screen buffer to the browser.
+- `get_key()`: Get the last key press code.
+- `random()`: Get a random integer.
+
+### Operators
+- Arithmetic: `+`, `-`, `*`, `/`
+- Comparison: `==`, `!=`, `<`, `>`
+- Unary: `-` (Negation), `!` (Not)
 
 ### Example
 
 ```
 +------------------+
-| @ dungeon main   |
+| @ dungeon init   |
 |                  |
-|  gold score = 0  |
+|  gold x = 40     |
+|  mem_set(20000, x) |
+|  > 0             |
++------------------+
+
++------------------+
+| @ dungeon frame  |
 |                  |
-|  ? (score < 10)  |
-|  +------------+  |
-|  | {          |  |
-|  | fight rat  |  #
-|  | score += 1 |  #
-|  | }          |  #
-|  +------------+  #
-|                  |
-|  > score         |
+|  gold x = mem_get(20000) |
+|  scribe(x, 12, 64) |
+|  reveal()        |
+|  > 0             |
 +------------------+
 ```
-
-## Compilation
-
-Run the compiler script:
-```bash
-npx ts-node test_compiler.ts
-```
-This generates `test.wasm`.

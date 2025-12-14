@@ -35,7 +35,7 @@ export class Action implements ASTNode {
     constructor(public verb: TokenType, public target?: string) { }
 }
 
-export class Call implements ASTNode {
+export class Call implements ASTNode, Expression {
     constructor(public name: string, public args: Expression[]) { }
 }
 
@@ -71,30 +71,20 @@ export class Parser {
 
     parse(): Program {
         const program = new Program();
-        let hasMain = false;
         while (!this.isAtEnd()) {
             // Consume walls/paths/dots between rooms
             if (this.match(TokenType.Wall, TokenType.Path, TokenType.Dot)) {
                 continue;
             }
-            const room = this.room();
-            if (room.name === 'main') {
-                if (hasMain) {
-                    throw new Error("Multiple 'main' rooms found.");
-                }
-                hasMain = true;
-            }
-            program.rooms.push(room);
-        }
-        if (!hasMain) {
-            throw new Error("No 'main' room found.");
+            if (this.isAtEnd()) break;
+            program.rooms.push(this.room());
         }
         return program;
     }
 
     private room(): Room {
         // room_header ::= PLAYER 'dungeon' identifier
-        // Consume any leading walls just in case (though parse loop handles it)
+        // Consume any leading walls just in case
         while (this.match(TokenType.Wall, TokenType.Path, TokenType.Dot)) { }
 
         this.consume(TokenType.Player, "Expect '@' at start of room.");
@@ -119,7 +109,15 @@ export class Parser {
             }
 
             if (this.check(TokenType.Player)) {
+                // Next room started without explicit exit?
+                // The grammar says room_close is mandatory, so we should error or assume implicit exit if we want to be lenient.
+                // But let's stick to grammar: room_close ::= EXIT expression
                 throw new Error(`Expect '>' exit before next room at line ${this.peek().line}`);
+            }
+
+            // If we hit EOF without exit, it's an error
+            if (this.isAtEnd()) {
+                throw new Error(`Expect '>' exit at end of room ${name}`);
             }
 
             body.push(this.statement());
@@ -140,9 +138,14 @@ export class Parser {
             return this.varDecl(this.previous().type);
         }
         if (this.match(TokenType.Query)) return this.conditional();
-        if (this.match(TokenType.Wander)) return this.loop();
+        if (this.match(TokenType.Spiral)) return this.loop();
         if (this.match(TokenType.VerbFight, TokenType.VerbOpen, TokenType.VerbDrink, TokenType.VerbEquip, TokenType.VerbPray, TokenType.VerbCast)) {
             return this.action(this.previous().type);
+        }
+        if (this.check(TokenType.Exit)) {
+            this.advance();
+            const value = this.expression();
+            return new Return(value);
         }
         if (this.check(TokenType.Identifier)) {
             // Assignment or Call
@@ -182,15 +185,36 @@ export class Parser {
         // Ignore walls before block start
         while (this.match(TokenType.Wall, TokenType.Path, TokenType.Dot)) { }
 
+        // We can have a block wrapped in walls/braces or a single statement
+        // The grammar says: room (which is a block)
+        // But the example shows:
+        // ? (score < 10)
+        // +------------+
+        // | fight rat   |
+        // ...
+        // So it expects a block.
+        // Let's allow { } or just a sequence of statements until a wall/end?
+        // Actually, the user example shows:
+        // ? (score < 10)
+        // +------------+
+        // | fight rat   |
+        // | score += 1  |
+        // +------------+
+        // This looks like a block delimited by walls?
+        // Or maybe we just look for a block.
+        // Let's support standard { } blocks for now, and also "implicit" blocks if we see walls?
+        // The user said: "Walls visually surround blocks, but braces still exist internally"
+        // So maybe we should look for braces.
+
         if (this.check(TokenType.LBrace)) {
             this.consume(TokenType.LBrace, "Expect '{'");
             while (!this.check(TokenType.RBrace) && !this.isAtEnd()) {
-                // Ignore walls inside block
                 if (this.match(TokenType.Wall, TokenType.Path, TokenType.Dot)) continue;
                 thenBlock.push(this.statement());
             }
             this.consume(TokenType.RBrace, "Expect '}'");
         } else {
+            // Single statement
             thenBlock.push(this.statement());
         }
 
@@ -198,12 +222,11 @@ export class Parser {
     }
 
     private loop(): While {
-        this.consume(TokenType.LParen, "Expect '(' after 'wander'.");
+        this.consume(TokenType.LParen, "Expect '(' after 'spiral'.");
         const condition = this.expression();
         this.consume(TokenType.RParen, "Expect ')' after condition.");
 
         const body: ASTNode[] = [];
-        // Ignore walls before block start
         while (this.match(TokenType.Wall, TokenType.Path, TokenType.Dot)) { }
 
         if (this.check(TokenType.LBrace)) {
