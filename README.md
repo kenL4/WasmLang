@@ -91,6 +91,8 @@ for (var i = 0; i < 10; i = i + 1) {
 }
 ```
 
+**TODO:** Implement support for functions (and potentially classes).
+
 ### Built-in Functions
 
 - **`set_char(x, y, char_code)`**
