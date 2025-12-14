@@ -2,6 +2,7 @@
 
 import { Emitter, Opcode, Section, ValType } from './emitter';
 import { Lexer } from './lexer';
+import { ColorLexer } from './colorlexer';
 import { Parser, Program, ASTNode, VarDecl, Assign, If, While, For, Block, Call, BinaryExpr, Identifier, NumberLiteral, Expression, FuncDecl, Return, ArrayAccess, UnaryExpr } from './parser';
 import { TokenType } from './lexer';
 
@@ -17,6 +18,16 @@ export class Compiler {
     compile(source: string): Uint8Array {
         const lexer = new Lexer(source);
         const tokens = lexer.tokenize();
+        return this.compileTokens(tokens);
+    }
+
+    compileFromPixels(pixels: number[], width: number): Uint8Array {
+        const lexer = new ColorLexer(pixels, width);
+        const tokens = lexer.tokenize();
+        return this.compileTokens(tokens);
+    }
+
+    private compileTokens(tokens: any[]): Uint8Array {
         const parser = new Parser(tokens);
         const program = parser.parse();
 
