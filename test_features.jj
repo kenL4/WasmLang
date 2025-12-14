@@ -1,0 +1,25 @@
+
+var data[10];
+var i = 0;
+
+func fill_random() {
+  for (var j = 0; j < 10; j = j + 1) {
+    data[j] = random(); 
+  }
+}
+
+func draw_bars() {
+  for (var k = 0; k < 10; k = k + 1) {
+    var val = data[k];
+    // Modulo hack: val - (val / 10) * 10
+    var height = val - (val / 10) * 10; 
+    set_char(k, height, 35); // Draw '#'
+  }
+}
+
+fill_random();
+
+while (1) {
+  draw_bars();
+  present();
+}

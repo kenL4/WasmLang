@@ -65,6 +65,11 @@ All variables are 32-bit integers.
 ```javascript
 var score = 0;
 var speed = 5;
+
+// Arrays (fixed size, compile-time allocation)
+var map[2000];
+map[0] = 1;
+
 ```
 
 ### Control Flow
@@ -91,7 +96,26 @@ for (var i = 0; i < 10; i = i + 1) {
 }
 ```
 
-**TODO:** Implement support for functions (and potentially classes).
+### Functions
+Functions are declared with `func` and can take arguments.
+```javascript
+func add(a, b) {
+  return a + b;
+}
+
+var result = add(10, 20);
+```
+
+**Return**:
+```javascript
+func test() {
+  if (x > 10) { return; }
+  // ...
+}
+```
+
+### TODO:
+- Classes (Optional)
 
 ### Built-in Functions
 
@@ -105,6 +129,30 @@ for (var i = 0; i < 10; i = i + 1) {
   - Sends the current video buffer to the screen.
   - Limits framerate to ~60 FPS.
   - **Must be called** inside your main loop to see anything.
+
+- **`random()`**
+  - Returns a random 32-bit integer (0 to 2147483647).
+  - Use modulo arithmetic helper for ranges (see `code.jj` example).
+
+- **`get_key()`**
+  - Returns the key code of the last pressed key (or 0 if none).
+  - Consumes the key event (subsequent calls return 0 until new key press).
+  - Key codes: 37 (Left), 38 (Up), 39 (Right), 40 (Down).
+
+## Game Loop
+For interactive applications, define an `update` function instead of using a `while(1)` loop. The runtime will call this function approximately 60 times per second.
+
+```javascript
+func update() {
+  // Handle input
+  var k = get_key();
+  if (k == 37) { x = x - 1; }
+  
+  // Draw
+  set_char(x, y, 64);
+  present();
+}
+```
 
 ## Example: Bouncing Ball
 

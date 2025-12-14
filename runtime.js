@@ -32,6 +32,10 @@ async function run() {
 
         worker.postMessage({ type: 'init', wasm: bytes });
 
+        document.addEventListener('keydown', (e) => {
+            worker.postMessage({ type: 'keydown', key: e.keyCode });
+        });
+
     } catch (e) {
         status.innerText = "Error: " + e.message;
         console.error(e);

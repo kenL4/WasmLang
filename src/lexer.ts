@@ -20,6 +20,12 @@ export enum TokenType {
     Gt,
     Lt,
     Comma,
+    LBracket,
+    RBracket,
+    Func,
+    Return,
+    NotEquals,
+    DoubleEquals,
     EOF,
 }
 
@@ -81,6 +87,8 @@ export class Lexer {
                     case 'else': type = TokenType.Else; break;
                     case 'while': type = TokenType.While; break;
                     case 'for': type = TokenType.For; break;
+                    case 'func': type = TokenType.Func; break;
+                    case 'return': type = TokenType.Return; break;
                 }
                 tokens.push({ type, value: id, line: this.line });
                 continue;
@@ -92,12 +100,19 @@ export class Lexer {
                 case '(': tokens.push({ type: TokenType.LParen, value: '(', line: this.line }); break;
                 case ')': tokens.push({ type: TokenType.RParen, value: ')', line: this.line }); break;
                 case ';': tokens.push({ type: TokenType.Semicolon, value: ';', line: this.line }); break;
-                case '=': tokens.push({ type: TokenType.Equals, value: '=', line: this.line }); break;
+                case '=':
+                    if (this.input[this.pos + 1] === '=') {
+                        this.advance();
+                        tokens.push({ type: TokenType.DoubleEquals, value: '==', line: this.line });
+                    } else {
+                        tokens.push({ type: TokenType.Equals, value: '=', line: this.line });
+                    }
+                    break;
                 case '+': tokens.push({ type: TokenType.Plus, value: '+', line: this.line }); break;
                 case '-': tokens.push({ type: TokenType.Minus, value: '-', line: this.line }); break;
                 case '*': tokens.push({ type: TokenType.Multiply, value: '*', line: this.line }); break;
                 case '/':
-                    if (this.peek() === '/') {
+                    if (this.input[this.pos + 1] === '/') {
                         // Comment: consume until end of line
                         while (this.peek() !== '\n' && this.peek() !== '') {
                             this.advance();
@@ -109,6 +124,16 @@ export class Lexer {
                 case '>': tokens.push({ type: TokenType.Gt, value: '>', line: this.line }); break;
                 case '<': tokens.push({ type: TokenType.Lt, value: '<', line: this.line }); break;
                 case ',': tokens.push({ type: TokenType.Comma, value: ',', line: this.line }); break;
+                case '[': tokens.push({ type: TokenType.LBracket, value: '[', line: this.line }); break;
+                case ']': tokens.push({ type: TokenType.RBracket, value: ']', line: this.line }); break;
+                case '!':
+                    if (this.input[this.pos + 1] === '=') {
+                        this.advance();
+                        tokens.push({ type: TokenType.NotEquals, value: '!=', line: this.line });
+                    } else {
+                        throw new Error(`Unexpected character: ! at line ${this.line}`);
+                    }
+                    break;
                 default:
                     throw new Error(`Unexpected character: ${char} at line ${this.line}`);
             }
