@@ -69,12 +69,18 @@ However, this is not a strict requirement. The following is also valid:
  > 0
 ```
 
-### Entering Rooms (Functions)
+### Entering/Exiting Rooms (Functions)
 To enter another room (calling the function), simply use its name followed by parentheses.
 Note that rooms do not accept arguments directly. You must pass data via global memory (see Memory & Intrinsics).
 
 ```
 some_room()
+```
+
+**Early Return (`>`)**:
+Use `>` to return a value and exit a room.
+```
+> 0
 ```
 
 ### Variables
@@ -99,12 +105,6 @@ spiral (coins < 100) {
   fight goblin
   coins += 10
 }
-```
-
-**Early Return (`>`)**:
-Use `>` to return a value from a room.
-```
-> 0
 ```
 
 ### Memory & Intrinsics
